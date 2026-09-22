@@ -78,6 +78,8 @@ async function loadEventSummary() {
     return;
   }
 
+  summaryEl.className = "event-summary " + categorySlug(data.category);
+
   if (data.seats_left <= 0) {
     summaryEl.innerHTML =
       '<p class="ticket-category">' + data.category + '</p>' +
@@ -92,8 +94,12 @@ async function loadEventSummary() {
   summaryEl.innerHTML =
     '<p class="ticket-category">' + data.category + '</p>' +
     '<h2>' + data.name + '</h2>' +
-    '<p>' + formatDate(data.event_date) + ' • ' + data.event_time + ' • ' + data.venue + '</p>' +
+    '<p>📅 ' + formatDate(data.event_date) + ' &nbsp; 🕐 ' + data.event_time + ' &nbsp; 📍 ' + data.venue + '</p>' +
     '<p>' + data.seats_left + ' seats left</p>';
+}
+
+function categorySlug(category) {
+  return "cat-" + category.toLowerCase().replace(/[^a-z]/g, "");
 }
 
 document.getElementById("regForm").addEventListener("submit", async function (e) {

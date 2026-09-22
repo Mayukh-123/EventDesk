@@ -28,7 +28,7 @@
       <input type="text" id="searchInput" placeholder="Search by event or category…">
     </div>
 
-    <div class="stamp-badge">REGISTRATIONS<br>OPEN</div>
+    <div class="stamp-badge"><span>Registrations<br>Open</span></div>
   </div>
 </header>
 
@@ -69,9 +69,13 @@ async function loadEvents() {
   }
 }
 
+function categorySlug(category) {
+  return "cat-" + category.toLowerCase().replace(/[^a-z]/g, "");
+}
+
 function buildEventCard(event) {
   const card = document.createElement("div");
-  card.className = "ticket";
+  card.className = "ticket " + categorySlug(event.category);
 
   const seatsLeft = event.seats_left;
   const soldOut = seatsLeft <= 0;
@@ -86,9 +90,9 @@ function buildEventCard(event) {
       '<h3 class="ticket-name">' + event.name + '</h3>' +
       '<p class="ticket-desc">' + event.description + '</p>' +
       '<div class="ticket-meta">' +
-        '<span>' + formatDate(event.event_date) + '</span>' +
-        '<span>' + event.event_time + '</span>' +
-        '<span>' + event.venue + '</span>' +
+        '<span>📅 ' + formatDate(event.event_date) + '</span>' +
+        '<span>🕐 ' + event.event_time + '</span>' +
+        '<span>📍 ' + event.venue + '</span>' +
       '</div>' +
     '</div>' +
     '<div class="ticket-stub">' +
