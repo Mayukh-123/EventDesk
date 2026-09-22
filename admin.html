@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organizer Dashboard — EventDesk</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container">
+    <a href="index.html" class="nav-brand">EventDesk</a>
+    <div class="nav-links">
+      <a href="index.html">Browse</a>
+      <a href="admin.html">Organizer</a>
+    </div>
+  </div>
+</nav>
+
+<main class="container">
+  <h2 class="section-heading" style="margin-top: 40px;">Event summary</h2>
+  <div class="summary-grid" id="summaryGrid">
+    <p class="loading">Loading…</p>
+  </div>
+
+  <h2 class="section-heading">All registrations</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Event</th>
+        <th>Registered at</th>
+      </tr>
+    </thead>
+    <tbody id="regTableBody">
+      <tr><td colspan="6">Loading…</td></tr>
+    </tbody>
+  </table>
+</main>
+
+<footer>EventDesk — Organizer view</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+
+async function loadDashboard() {
+  const summaryEl = document.getElementById("summaryGrid");
+  const tbody = document.getElementById("regTableBody");
+
+  const { data: events, error: evErr } = await sb
+    .from("event_availability")
+    .select("*")
+    .order("event_date", { ascending: true });
+
+  if (evErr) {
+    summaryEl.innerHTML = "<p class='error'>" + evErr.message + "</p>";
+  } else {
+    summaryEl.innerHTML = "";
+    for (let i = 0; i < events.length; i++) {
+      const ev = events[i];
+      const card = document.createElement("div");
+      card.className = "summary-card";
+      card.innerHTML =
+        "<h4>" + ev.name + "</h4>" +
+        "<p>" + ev.registered_count + " registered</p>" +
+        "<p>" + ev.seats_left + " seats left</p>";
+      summaryEl.appendChild(card);
+    }
+  }
+
+  const { data: regs, error: regErr } = await sb
+    .from("registrations")
+    .select("id, name, email, phone, created_at, events(name)")
+    .order("created_at", { ascending: false });
+
+  if (regErr) {
+    tbody.innerHTML = "<tr><td colspan='6' class='error'>" + regErr.message + "</td></tr>";
+    return;
+  }
+
+  if (!regs || regs.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='6'>No registrations yet.</td></tr>";
+    return;
+  }
+
+  tbody.innerHTML = "";
+  for (let i = 0; i < regs.length; i++) {
+    const r = regs[i];
+    const row = document.createElement("tr");
+    const eventName = r.events ? r.events.name : "—";
+    const when = new Date(r.created_at).toLocaleString("en-IN");
+    row.innerHTML =
+      "<td>" + r.id.slice(0, 8).toUpperCase() + "</td>" +
+      "<td>" + r.name + "</td>" +
+      "<td>" + r.email + "</td>" +
+      "<td>" + r.phone + "</td>" +
+      "<td>" + eventName + "</td>" +
+      "<td>" + when + "</td>";
+    tbody.appendChild(row);
+  }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

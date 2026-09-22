@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — EventDesk</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container">
+    <a href="index.html" class="nav-brand">EventDesk</a>
+    <div class="nav-links">
+      <a href="index.html">Browse</a>
+      <a href="admin.html">Organizer</a>
+    </div>
+  </div>
+</nav>
+
+<main class="container">
+  <div class="form-card">
+
+    <div class="event-summary" id="eventSummary">
+      <p class="loading">Loading event…</p>
+    </div>
+
+    <form id="regForm">
+      <label for="name">Full name</label>
+      <input type="text" id="name" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" required>
+
+      <label for="phone">Phone number</label>
+      <input type="tel" id="phone" required>
+
+      <label for="rollNo">Roll number / class</label>
+      <input type="text" id="rollNo" required>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Confirm registration</button>
+      <p class="form-error" id="formError"></p>
+    </form>
+
+    <div class="confirmation" id="confirmation"></div>
+
+  </div>
+</main>
+
+<footer>EventDesk — built by Mayukh Rangnekar</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+
+const params = new URLSearchParams(window.location.search);
+const eventId = params.get("event");
+let currentEvent = null;
+
+async function loadEventSummary() {
+  const summaryEl = document.getElementById("eventSummary");
+
+  if (!eventId) {
+    summaryEl.innerHTML = "<p class='error'>No event selected — go back and pick one from the list.</p>";
+    document.getElementById("regForm").style.display = "none";
+    return;
+  }
+
+  const { data, error } = await sb
+    .from("event_availability")
+    .select("*")
+    .eq("id", eventId)
+    .single();
+
+  if (error || !data) {
+    summaryEl.innerHTML = "<p class='error'>That event couldn't be found.</p>";
+    document.getElementById("regForm").style.display = "none";
+    return;
+  }
+
+  if (data.seats_left <= 0) {
+    summaryEl.innerHTML =
+      '<p class="ticket-category">' + data.category + '</p>' +
+      '<h2>' + data.name + '</h2>' +
+      '<p>This event is full.</p>';
+    document.getElementById("regForm").style.display = "none";
+    return;
+  }
+
+  currentEvent = data;
+
+  summaryEl.innerHTML =
+    '<p class="ticket-category">' + data.category + '</p>' +
+    '<h2>' + data.name + '</h2>' +
+    '<p>' + formatDate(data.event_date) + ' • ' + data.event_time + ' • ' + data.venue + '</p>' +
+    '<p>' + data.seats_left + ' seats left</p>';
+}
+
+document.getElementById("regForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const btn = document.getElementById("submitBtn");
+  const errorEl = document.getElementById("formError");
+  btn.disabled = true;
+  btn.textContent = "Registering…";
+  errorEl.textContent = "";
+
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const rollNo = document.getElementById("rollNo").value.trim();
+
+  const { data, error } = await sb
+    .from("registrations")
+    .insert([{ event_id: eventId, name: name, email: email, phone: phone, roll_no: rollNo }])
+    .select()
+    .single();
+
+  if (error) {
+    errorEl.textContent = "Something went wrong — " + error.message;
+    btn.disabled = false;
+    btn.textContent = "Confirm registration";
+    return;
+  }
+
+  showConfirmation(data);
+});
+
+function showConfirmation(reg) {
+  document.getElementById("regForm").style.display = "none";
+  document.querySelector(".event-summary").style.display = "none";
+
+  const conf = document.getElementById("confirmation");
+  conf.style.display = "block";
+  conf.innerHTML =
+    '<div class="stamp">Confirmed</div>' +
+    '<h2>You\'re in, ' + reg.name.split(" ")[0] + '.</h2>' +
+    '<p>Registration code</p>' +
+    '<p class="reg-code">' + reg.id.slice(0, 8).toUpperCase() + '</p>' +
+    '<p>' + currentEvent.name + ' — ' + formatDate(currentEvent.event_date) + '</p>' +
+    '<p>Show this code at the entry desk on the day.</p>' +
+    '<a href="index.html" class="stub-btn">Back to events</a>';
+}
+
+loadEventSummary();
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EventDesk — Campus Event Registration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container">
+    <a href="index.html" class="nav-brand">EventDesk</a>
+    <div class="nav-links">
+      <a href="index.html">Browse</a>
+      <a href="admin.html">Organizer</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <p class="hero-eyebrow">Campus event registration</p>
+    <h1>Pick an event. <em>Get your pass.</em></h1>
+    <p class="lede">Every seat here is real — registering writes straight into the event's guest list, no forms lost in an inbox.</p>
+
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Search by event or category…">
+    </div>
+
+    <div class="stamp-badge">REGISTRATIONS<br>OPEN</div>
+  </div>
+</header>
+
+<main class="container">
+  <h2 class="section-heading">Upcoming events</h2>
+  <div class="ticket-grid" id="eventGrid">
+    <p class="loading">Loading events…</p>
+  </div>
+</main>
+
+<footer>EventDesk — built by Mayukh Rangnekar</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+
+async function loadEvents() {
+  const grid = document.getElementById("eventGrid");
+
+  const { data, error } = await sb
+    .from("event_availability")
+    .select("*")
+    .order("event_date", { ascending: true });
+
+  if (error) {
+    grid.innerHTML = "<p class='error'>Could not load events — " + error.message + "</p>";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    grid.innerHTML = "<p class='empty'>No events posted yet. Check back soon.</p>";
+    return;
+  }
+
+  grid.innerHTML = "";
+  for (let i = 0; i < data.length; i++) {
+    grid.appendChild(buildEventCard(data[i]));
+  }
+}
+
+function buildEventCard(event) {
+  const card = document.createElement("div");
+  card.className = "ticket";
+
+  const seatsLeft = event.seats_left;
+  const soldOut = seatsLeft <= 0;
+
+  const actionHtml = soldOut
+    ? '<span class="stub-btn stub-btn-disabled">Sold out</span>'
+    : '<a class="stub-btn" href="register.html?event=' + event.id + '">Register</a>';
+
+  card.innerHTML =
+    '<div class="ticket-main">' +
+      '<p class="ticket-category">' + event.category + '</p>' +
+      '<h3 class="ticket-name">' + event.name + '</h3>' +
+      '<p class="ticket-desc">' + event.description + '</p>' +
+      '<div class="ticket-meta">' +
+        '<span>' + formatDate(event.event_date) + '</span>' +
+        '<span>' + event.event_time + '</span>' +
+        '<span>' + event.venue + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="ticket-stub">' +
+      '<p class="stub-label">Admit one</p>' +
+      '<p class="stub-seats">' + (soldOut ? "Full" : seatsLeft + " seats left") + '</p>' +
+      actionHtml +
+    '</div>';
+
+  return card;
+}
+
+document.getElementById("searchInput").addEventListener("input", function () {
+  const query = this.value.toLowerCase();
+  const cards = document.querySelectorAll(".ticket");
+  for (let i = 0; i < cards.length; i++) {
+    const text = cards[i].textContent.toLowerCase();
+    cards[i].style.display = text.includes(query) ? "" : "none";
+  }
+});
+
+loadEvents();
+</script>
+</body>
+</html>
