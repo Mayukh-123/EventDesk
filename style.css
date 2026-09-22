@@ -80,30 +80,11 @@ a{ color: inherit; }
 .hero{
   padding: 70px 0 50px;
   position: relative;
-  overflow: hidden;
-}
-
-.hero::before{
-  content: "ADMIT ONE";
-  position: absolute;
-  right: -30px;
-  bottom: -70px;
-  font-family: 'Fraunces', serif;
-  font-weight: 900;
-  font-size: 170px;
-  color: rgba(31, 42, 34, 0.045);
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 0;
 }
 
 .hero .container{
   position: relative;
   z-index: 1;
-}
-
-@media (max-width: 760px){
-  .hero::before{ display: none; }
 }
 
 .hero-eyebrow{
